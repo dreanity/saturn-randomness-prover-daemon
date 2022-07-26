@@ -17,6 +17,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	uhydrogen = "uhydrogen"
+	gasLimit  = 150_000
+)
+
 func SendProveRandomnessMsg(
 	ctx context.Context,
 	grpcConn *grpc.ClientConn,
@@ -43,9 +48,9 @@ func SendProveRandomnessMsg(
 		return err
 	}
 
-	gasPrice := sdktypes.NewCoin("uhydrogen", sdktypes.NewInt(1))
+	gasPrice := sdktypes.NewCoin(uhydrogen, sdktypes.NewInt(1))
 
-	txBuilder.SetGasLimit(150_000)
+	txBuilder.SetGasLimit(gasLimit)
 	txBuilder.SetFeeAmount(sdktypes.NewCoins(gasPrice))
 
 	//-----------------------------------------------------------------------
