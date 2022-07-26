@@ -10,7 +10,7 @@ import (
 	sdktx "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	xauthsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	"github.com/dreanity/saturn-daemon/internal/drand"
+	"github.com/dreanity/saturn-randomness-prover-daemon/internal/drand"
 	"github.com/dreanity/saturn/app"
 	"github.com/dreanity/saturn/x/randomness/types"
 	"github.com/ignite/cli/ignite/pkg/cosmoscmd"

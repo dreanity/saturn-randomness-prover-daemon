@@ -8,7 +8,7 @@ import (
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/dreanity/saturn-daemon/internal/daemon"
+	"github.com/dreanity/saturn-randomness-prover-daemon/internal/daemon"
 	"github.com/spf13/cobra"
 )
 

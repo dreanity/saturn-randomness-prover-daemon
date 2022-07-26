@@ -10,7 +10,7 @@ import (
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/dreanity/saturn-daemon/internal/saturn"
+	"github.com/dreanity/saturn-randomness-prover-daemon/internal/saturn"
 	"google.golang.org/grpc"
 )
 
@@ -37,15 +37,16 @@ func StartDaemon(configs *Configs) (err error) {
 	go func() {
 		var paginationKey []byte
 
-		baseAccount, err := saturn.GetBaseAccount(grpcConn, configs.Address.String())
+		baseAccount := getBaseAccount(grpcConn, configs.Address.String())
 
-		if err != nil {
-			log.Fatal(err)
+		if baseAccount == nil {
+			log.Fatal()
 		}
 
 		for {
-			randomnesses, pgk, err := saturn.GetUnprovenRandomnessAll(grpcConn, paginationKey)
-			if err != nil {
+			randomnesses, pgk := getUnprovenRandomnessAll(grpcConn, paginationKey)
+
+			if randomnesses == nil || pgk == nil {
 				continue
 			}
 			paginationKey = pgk

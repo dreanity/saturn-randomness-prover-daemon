@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/saturn-randomness-prover-daemon/cmd"
+	log "github.com/sirupsen/logrus"
+)
 
 func main() {
-	fmt.Print("Hello World")
+	log.SetFormatter(new(log.JSONFormatter))
+	cmd.InitCmd()
 }

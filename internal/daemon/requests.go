@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dreanity/saturn-daemon/internal/drand"
-	"github.com/dreanity/saturn-daemon/internal/saturn"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/dreanity/saturn-randomness-prover-daemon/internal/drand"
+	"github.com/dreanity/saturn-randomness-prover-daemon/internal/saturn"
 	saturntypes "github.com/dreanity/saturn/x/randomness/types"
 	"google.golang.org/grpc"
 )
@@ -13,6 +14,29 @@ import (
 type RandomnessChan struct {
 	Randomness    *[]saturntypes.UnprovenRandomness
 	PaginationKey []byte
+}
+
+func getBaseAccount(grpcConn *grpc.ClientConn, address string) *authtypes.BaseAccount {
+	baseAccountChan := make(chan *authtypes.BaseAccount)
+
+	go func() {
+		baseAccount, err := saturn.GetBaseAccount(grpcConn, address)
+		if err != nil {
+			fmt.Print(err)
+			baseAccountChan <- nil
+			return
+		}
+
+		baseAccountChan <- baseAccount
+	}()
+
+	select {
+	case baseAccount := <-baseAccountChan:
+		return baseAccount
+	case <-time.After(2 * time.Second):
+		fmt.Printf("The base account request time has expired")
+		return nil
+	}
 }
 
 func getRounds(
@@ -44,6 +68,7 @@ func getRound(c chan *drand.Round, urls []string, rRound uint64) {
 	if err != nil {
 		fmt.Printf("Get round №%d error: %s", rRound, err)
 		c <- nil
+		return
 	}
 	c <- round
 }
@@ -56,6 +81,7 @@ func getUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (
 		if err != nil {
 			fmt.Printf("Get unproven Randomness all error: %s", err)
 			randomnessesChan <- nil
+			return
 		}
 		randomnessesChan <- &RandomnessChan{
 			Randomness:    randomnesses,
@@ -70,5 +96,4 @@ func getUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (
 		fmt.Printf("The unproven randomness all request time has expired")
 		return nil, nil
 	}
-
 }
