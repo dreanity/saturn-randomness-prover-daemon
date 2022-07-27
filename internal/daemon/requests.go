@@ -1,13 +1,13 @@
 package daemon
 
 import (
-	"fmt"
 	"time"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/dreanity/saturn-randomness-prover-daemon/internal/drand"
 	"github.com/dreanity/saturn-randomness-prover-daemon/internal/saturn"
 	saturntypes "github.com/dreanity/saturn/x/randomness/types"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -22,7 +22,7 @@ func getBaseAccount(grpcConn *grpc.ClientConn, address string) *authtypes.BaseAc
 	go func() {
 		baseAccount, err := saturn.GetBaseAccount(grpcConn, address)
 		if err != nil {
-			fmt.Print(err)
+			log.Error(err)
 			baseAccountChan <- nil
 			return
 		}
@@ -34,7 +34,7 @@ func getBaseAccount(grpcConn *grpc.ClientConn, address string) *authtypes.BaseAc
 	case baseAccount := <-baseAccountChan:
 		return baseAccount
 	case <-time.After(2 * time.Second):
-		fmt.Printf("The base account request time has expired")
+		log.Warn("The base account request time has expired")
 		return nil
 	}
 }
@@ -55,7 +55,7 @@ func getRounds(
 				rounds = append(rounds, *round)
 			}
 		case <-time.After(2 * time.Second):
-			fmt.Printf("The round №%d request time has expired", randomness.Round)
+			log.Warnf("The round №%d request time has expired", randomness.Round)
 			continue
 		}
 	}
@@ -66,7 +66,7 @@ func getRounds(
 func getRound(c chan *drand.Round, urls []string, rRound uint64) {
 	round, err := drand.GetRound(urls, rRound)
 	if err != nil {
-		fmt.Printf("Get round №%d error: %s", rRound, err)
+		log.Errorf("Get round №%d error: %s", rRound, err)
 		c <- nil
 		return
 	}
@@ -79,7 +79,7 @@ func getUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (
 	go func() {
 		randomnesses, pgk, err := saturn.GetUnprovenRandomnessAll(grpcConn, paginationKey)
 		if err != nil {
-			fmt.Printf("Get unproven Randomness all error: %s", err)
+			log.Errorf("Get unproven Randomness all error: %s", err)
 			randomnessesChan <- nil
 			return
 		}
@@ -93,7 +93,7 @@ func getUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (
 	case randomness := <-randomnessesChan:
 		return randomness.Randomness, randomness.PaginationKey
 	case <-time.After(2 * time.Second):
-		fmt.Printf("The unproven randomness all request time has expired")
+		log.Warn("The unproven randomness all request time has expired")
 		return nil, nil
 	}
 }
