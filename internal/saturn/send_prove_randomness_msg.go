@@ -2,6 +2,7 @@ package saturn
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -14,6 +15,7 @@ import (
 	"github.com/dreanity/saturn/app"
 	"github.com/dreanity/saturn/x/randomness/types"
 	"github.com/ignite/cli/ignite/pkg/cosmoscmd"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -36,6 +38,14 @@ func SendProveRandomnessMsg(
 	encoding := cosmoscmd.MakeEncodingConfig(app.ModuleBasics)
 	txBuilder := encoding.TxConfig.NewTxBuilder()
 
+	log.WithFields(log.Fields{
+		"addr":   accAddress,
+		"pub":    pubKey.String(),
+		"priv":   hex.EncodeToString(privKey.Key),
+		"accNum": accNum,
+		"accSeq": accSeq,
+	}).Infoln()
+
 	msg := types.NewMsgProveRandomness(
 		accAddress,
 		round.Round,
@@ -48,10 +58,10 @@ func SendProveRandomnessMsg(
 		return err
 	}
 
-	gasPrice := sdktypes.NewCoin(uhydrogen, sdktypes.NewInt(1))
+	feeAmount := sdktypes.NewCoin(uhydrogen, sdktypes.NewInt(gasLimit))
 
 	txBuilder.SetGasLimit(gasLimit)
-	txBuilder.SetFeeAmount(sdktypes.NewCoins(gasPrice))
+	txBuilder.SetFeeAmount(sdktypes.NewCoins(feeAmount))
 
 	//-----------------------------------------------------------------------
 
@@ -61,6 +71,7 @@ func SendProveRandomnessMsg(
 			SignMode:  encoding.TxConfig.SignModeHandler().DefaultMode(),
 			Signature: nil,
 		},
+		Sequence: accSeq,
 	}
 
 	txBuilder.SetSignatures(sigV2)
@@ -96,7 +107,7 @@ func SendProveRandomnessMsg(
 	res, err := txSender.BroadcastTx(
 		ctx,
 		&sdktx.BroadcastTxRequest{
-			Mode:    sdktx.BroadcastMode_BROADCAST_MODE_ASYNC,
+			Mode:    sdktx.BroadcastMode_BROADCAST_MODE_BLOCK,
 			TxBytes: txBytes,
 		})
 
@@ -105,5 +116,8 @@ func SendProveRandomnessMsg(
 	}
 
 	_ = res
+
+	log.Infoln(res)
+	// panic("stop")
 	return nil
 }

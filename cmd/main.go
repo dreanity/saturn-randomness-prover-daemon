@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	log.SetFormatter(new(log.JSONFormatter))
+	log.SetFormatter(new(log.TextFormatter))
 	cobra.InitCmd()
 }

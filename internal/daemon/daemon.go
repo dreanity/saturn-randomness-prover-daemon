@@ -7,12 +7,11 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/dreanity/saturn-randomness-prover-daemon/internal/saturn"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -38,12 +37,6 @@ func StartDaemon(configs *Configs) (err error) {
 
 	var paginationKey []byte
 
-	baseAccount := getBaseAccount(grpcConn, configs.Address.String())
-
-	if baseAccount == nil {
-		log.Fatal("Base account is nil")
-	}
-
 	ticker := time.NewTicker(time.Second)
 	stop := make(chan bool)
 
@@ -53,15 +46,22 @@ func StartDaemon(configs *Configs) (err error) {
 			select {
 			case <-ticker.C:
 				randomnesses, pgk := getUnprovenRandomnessAll(grpcConn, paginationKey)
-
-				if randomnesses == nil || pgk == nil {
+				log.Infoln(randomnesses, pgk)
+				if randomnesses == nil {
+					log.Warnln("Randomnesses is nil or PaginationKey is nil")
 					continue
 				}
 				paginationKey = pgk
 
 				rounds := getRounds(randomnesses, configs.DrandUrls)
-
 				for _, round := range rounds {
+					account := getAccount(grpcConn, configs.Address.String())
+
+					if account == nil {
+						log.Warnln("Base account is nil")
+						continue
+					}
+
 					err := saturn.SendProveRandomnessMsg(
 						context.Background(),
 						grpcConn,
@@ -69,12 +69,13 @@ func StartDaemon(configs *Configs) (err error) {
 						configs.PrivateKey,
 						configs.PublicKey,
 						configs.Address.String(),
-						baseAccount.AccountNumber,
-						baseAccount.Sequence,
+						(*account).GetAccountNumber(),
+						(*account).GetSequence(),
 						configs.ChainID,
 					)
 
 					if err != nil {
+						log.Errorln(err)
 						continue
 					}
 				}

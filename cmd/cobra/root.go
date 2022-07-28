@@ -20,6 +20,7 @@ const (
 )
 
 func InitCmd() {
+	setPrefixes("saturn")
 	rootCmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start saturn daemon and set configs",
@@ -73,13 +74,13 @@ func InitCmd() {
 		},
 	}
 
-	rootCmd.Flags().StringP(PrivateKey, "pk", "", "The private key from which the transaction will be sent (required)")
+	rootCmd.Flags().StringP(PrivateKey, "p", "", "The private key from which the transaction will be sent (required)")
 	rootCmd.MarkFlagRequired(PrivateKey)
-	rootCmd.Flags().StringP(NodeGrpcUrl, "ngu", "", "A grpc url to the node to which the transaction will be sent (required)")
+	rootCmd.Flags().StringP(NodeGrpcUrl, "n", "", "A grpc url to the node to which the transaction will be sent (required)")
 	rootCmd.MarkFlagRequired(NodeGrpcUrl)
-	rootCmd.Flags().StringP(DrandUrls, "du", "", "Urls to drand nodes (required)")
+	rootCmd.Flags().StringArrayP(DrandUrls, "d", []string{}, "Urls to drand nodes (required)")
 	rootCmd.MarkFlagRequired(DrandUrls)
-	rootCmd.Flags().StringP(ChainID, "cid", "", "Chain identifier (required)")
+	rootCmd.Flags().StringP(ChainID, "c", "", "Chain identifier (required)")
 	rootCmd.MarkFlagRequired(ChainID)
 
 	execute(rootCmd)
@@ -90,4 +91,20 @@ func execute(rootCmd *cobra.Command) {
 		log.Error(err)
 		os.Exit(1)
 	}
+}
+
+func setPrefixes(accountAddressPrefix string) {
+	// Set prefixes
+	accountPubKeyPrefix := accountAddressPrefix + "pub"
+	validatorAddressPrefix := accountAddressPrefix + "valoper"
+	validatorPubKeyPrefix := accountAddressPrefix + "valoperpub"
+	consNodeAddressPrefix := accountAddressPrefix + "valcons"
+	consNodePubKeyPrefix := accountAddressPrefix + "valconspub"
+
+	// Set and seal config
+	config := types.GetConfig()
+	config.SetBech32PrefixForAccount(accountAddressPrefix, accountPubKeyPrefix)
+	config.SetBech32PrefixForValidator(validatorAddressPrefix, validatorPubKeyPrefix)
+	config.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
+	config.Seal()
 }

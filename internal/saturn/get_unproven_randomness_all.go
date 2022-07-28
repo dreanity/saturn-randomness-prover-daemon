@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func GetUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (*[]types.UnprovenRandomness, []byte, error) {
+func GetUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (*types.QueryAllUnprovenRandomnessResponse, error) {
 	queryClient := types.NewQueryClient(grpcConn)
 	res, err := queryClient.UnprovenRandomnessAll(context.Background(), &types.QueryAllUnprovenRandomnessRequest{
 		Pagination: &query.PageRequest{
@@ -16,8 +16,8 @@ func GetUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (
 		},
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &res.UnprovenRandomness, res.Pagination.NextKey, nil
+	return res, nil
 }

@@ -6,6 +6,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/dreanity/saturn-randomness-prover-daemon/internal/drand"
 	"github.com/dreanity/saturn-randomness-prover-daemon/internal/saturn"
+	randtypes "github.com/dreanity/saturn/x/randomness/types"
 	saturntypes "github.com/dreanity/saturn/x/randomness/types"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -16,23 +17,24 @@ type RandomnessChan struct {
 	PaginationKey []byte
 }
 
-func getBaseAccount(grpcConn *grpc.ClientConn, address string) *authtypes.BaseAccount {
-	baseAccountChan := make(chan *authtypes.BaseAccount)
+func getAccount(grpcConn *grpc.ClientConn, address string) *authtypes.GenesisAccount {
+	accountChan := make(chan *authtypes.GenesisAccount)
 
 	go func() {
-		baseAccount, err := saturn.GetBaseAccount(grpcConn, address)
+		account, err := saturn.GetAccount(grpcConn, address)
+
 		if err != nil {
 			log.Error(err)
-			baseAccountChan <- nil
+			accountChan <- nil
 			return
 		}
 
-		baseAccountChan <- baseAccount
+		accountChan <- account
 	}()
 
 	select {
-	case baseAccount := <-baseAccountChan:
-		return baseAccount
+	case account := <-accountChan:
+		return account
 	case <-time.After(2 * time.Second):
 		log.Warn("The base account request time has expired")
 		return nil
@@ -74,24 +76,26 @@ func getRound(c chan *drand.Round, urls []string, rRound uint64) {
 }
 
 func getUnprovenRandomnessAll(grpcConn *grpc.ClientConn, paginationKey []byte) (*[]saturntypes.UnprovenRandomness, []byte) {
-	randomnessesChan := make(chan *RandomnessChan)
+	randomnessesChan := make(chan *randtypes.QueryAllUnprovenRandomnessResponse)
 
 	go func() {
-		randomnesses, pgk, err := saturn.GetUnprovenRandomnessAll(grpcConn, paginationKey)
+		res, err := saturn.GetUnprovenRandomnessAll(grpcConn, paginationKey)
+		log.Infoln(res, "ALL")
 		if err != nil {
 			log.Errorf("Get unproven Randomness all error: %s", err)
 			randomnessesChan <- nil
 			return
 		}
-		randomnessesChan <- &RandomnessChan{
-			Randomness:    randomnesses,
-			PaginationKey: pgk,
-		}
+		randomnessesChan <- res
 	}()
 
 	select {
 	case randomness := <-randomnessesChan:
-		return randomness.Randomness, randomness.PaginationKey
+		if randomness != nil {
+			return &randomness.UnprovenRandomness, randomness.Pagination.NextKey
+		}
+
+		return nil, nil
 	case <-time.After(2 * time.Second):
 		log.Warn("The unproven randomness all request time has expired")
 		return nil, nil
