@@ -56,7 +56,7 @@ func getRounds(
 			if round != nil {
 				rounds = append(rounds, *round)
 			}
-		case <-time.After(2 * time.Second):
+		case <-time.After(3 * time.Second):
 			log.Warnf("The round №%d request time has expired", randomness.Round)
 			continue
 		}

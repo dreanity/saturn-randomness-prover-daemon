@@ -117,7 +117,5 @@ func SendProveRandomnessMsg(
 
 	_ = res
 
-	log.Infoln(res)
-	// panic("stop")
 	return nil
 }
